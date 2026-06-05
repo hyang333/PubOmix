@@ -16,8 +16,8 @@ results using \pkg{ComplexHeatmap}. The plot contains five columns:
 vizHomerBar(homer_data, top_n = 20, pvalue_col = "#2166AC",
             target_col = "#B2182B",
             title = "HOMER Known Motif Enrichment",
-            logo_width = unit(2, "cm"), bar_width = unit(4, "cm"),
-            row_height = unit(8, "mm"), ...)
+            logo_width = grid::unit(2, "cm"), bar_width = grid::unit(4, "cm"),
+            row_height = grid::unit(8, "mm"), ...)
 }
 \arguments{
   \item{homer_data}{A \code{\link{HomerData-class}} object.}
