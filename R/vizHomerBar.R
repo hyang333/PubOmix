@@ -41,16 +41,17 @@
 #' @importFrom png readPNG
 #' @importFrom circlize colorRamp2
 #' @export
-vizHomerBar <- function(homer_data,
-                        top_n = NULL,
-                        pvalue_col = "#2166AC",
-                        target_col = "#B2182B",
-                        title = "HOMER Known Motif Enrichment",
-                        logo_width = 3,
-                        bar_width = 3,
-                        row_height = 6,
-                        ...) {
-
+vizHomerBar <- function(
+  homer_data,
+  top_n = NULL,
+  pvalue_col = "#2166AC",
+  target_col = "#B2182B",
+  title = "HOMER Known Motif Enrichment",
+  logo_width = 3,
+  bar_width = 3,
+  row_height = 6,
+  ...
+) {
   # Convert numeric parameters to grid units
   logo_width <- grid::unit(logo_width, "cm")
   bar_width <- grid::unit(bar_width, "cm")
@@ -58,8 +59,10 @@ vizHomerBar <- function(homer_data,
 
   # --- Validate input ---
   if (!is(homer_data, "HomerData")) {
-    stop("homer_data must be a HomerData object. ",
-         "Use readHomerDir() to create one.")
+    stop(
+      "homer_data must be a HomerData object. ",
+      "Use readHomerDir() to create one."
+    )
   }
 
   md <- homer_data@motif_data
@@ -148,11 +151,11 @@ vizHomerBar <- function(homer_data,
 
   # --- Assemble row annotations ---
   ha <- rowAnnotation(
-    Rank       = anno_rank,
-    TF         = anno_tf,
-    Motif      = anno_logo,
+    Rank = anno_rank,
+    TF = anno_tf,
+    Motif = anno_logo,
     `-log(Pvalue)` = anno_pval,
-    `% Targets`    = anno_target,
+    `% Targets` = anno_target,
     annotation_name_rot = 0,
     annotation_name_gp = gpar(fontsize = 9, fontface = "bold"),
     gap = unit(2, "mm")
@@ -199,9 +202,13 @@ vizHomerBar <- function(homer_data,
 #' @return Character vector of file paths with SVGs replaced by temp PNGs.
 #' @keywords internal
 .convert_svg_to_png <- function(logo_paths) {
-  svg_idx <- which(grepl("\\.svg$", logo_paths, ignore.case = TRUE) &
-                   !is.na(logo_paths))
-  if (length(svg_idx) == 0) return(logo_paths)
+  svg_idx <- which(
+    grepl("\\.svg$", logo_paths, ignore.case = TRUE) &
+      !is.na(logo_paths)
+  )
+  if (length(svg_idx) == 0) {
+    return(logo_paths)
+  }
 
   # Try to find matching .logo.png files first (HOMER often generates both)
   for (i in svg_idx) {
@@ -212,24 +219,33 @@ vizHomerBar <- function(homer_data,
   }
 
   # Re-check which are still SVGs
-  svg_idx <- which(grepl("\\.svg$", logo_paths, ignore.case = TRUE) &
-                   !is.na(logo_paths))
-  if (length(svg_idx) == 0) return(logo_paths)
+  svg_idx <- which(
+    grepl("\\.svg$", logo_paths, ignore.case = TRUE) &
+      !is.na(logo_paths)
+  )
+  if (length(svg_idx) == 0) {
+    return(logo_paths)
+  }
 
   # Convert remaining SVGs to temp PNGs using rsvg
   if (requireNamespace("rsvg", quietly = TRUE)) {
     for (i in svg_idx) {
       tmp_png <- tempfile(fileext = ".png")
-      tryCatch({
-        rsvg::rsvg_png(logo_paths[i], file = tmp_png, width = 400)
-        logo_paths[i] <- tmp_png
-      }, error = function(e) {
-        warning(sprintf("Failed to convert SVG to PNG: %s", logo_paths[i]))
-      })
+      tryCatch(
+        {
+          rsvg::rsvg_png(logo_paths[i], file = tmp_png, width = 400)
+          logo_paths[i] <- tmp_png
+        },
+        error = function(e) {
+          warning(sprintf("Failed to convert SVG to PNG: %s", logo_paths[i]))
+        }
+      )
     }
   } else {
-    message("Tip: install the 'rsvg' package to avoid SVG rendering warnings: ",
-            "install.packages('rsvg')")
+    message(
+      "Tip: install the 'rsvg' package to avoid SVG rendering warnings: ",
+      "install.packages('rsvg')"
+    )
   }
 
   return(logo_paths)
