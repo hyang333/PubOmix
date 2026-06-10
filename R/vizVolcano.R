@@ -36,7 +36,11 @@
 #'   Default is \code{0.4}.
 #' @param count_y_position Numeric between 0 and 1. Vertical position of the
 #'   zone count labels as a fraction of the y-axis range (0 = bottom,
-#'   1 = top). Default is \code{0.75}.
+#'   1 = top). Default is \code{0.95}.
+#' @param shade_alpha Numeric. Alpha transparency for the zone background
+#'   shading (0 = invisible, 1 = opaque). Default is \code{0.08}.
+#' @param label_color Character. Color for gene label text when
+#'   \code{label_genes} is used. Default is \code{"black"}.
 #' @param title Character. Plot title. Default is \code{"Volcano Plot"}.
 #' @param xlab Character or expression. X-axis label. Default is
 #'   \code{"log2(Fold Change)"}.
@@ -77,16 +81,17 @@ vizVolcano <- function(
   point_size = 1.2,
   point_alpha = 0.7,
   border_width = 0.4,
-  count_y_position = 0.75,
+  count_y_position = 0.95,
+  shade_alpha = 0.08,
+  label_color = "black",
   title = "Volcano Plot",
   xlab = "log2(Fold Change)",
-  ylab = expression(-log[10]~italic(FDR)),
+  ylab = expression(-log[10] ~ italic(FDR)),
   xlim = NULL,
   ylim = NULL,
   label_genes = NULL,
   gene_col = "symbol"
 ) {
-
   # ── Check that ggplot2 is available ────────────────────────────────────────
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop(
@@ -140,17 +145,19 @@ vizVolcano <- function(
   # Named colour vector for scale_color_manual
   color_map <- c(
     "Sig_High" = col_up,
-    "Sig_Low"  = col_low,
-    "NS"       = col_ns
+    "Sig_Low" = col_low,
+    "NS" = col_ns
   )
 
   # ── Count significant genes in 4 zones ────────────────────────────────────
   sig <- df[df$padj < padj_cutoff, ]
   n_down_high <- sum(sig$log2FoldChange < -lfc_threshold)
-  n_down_low  <- sum(sig$log2FoldChange >= -lfc_threshold & sig$log2FoldChange < 0)
-  n_up_low    <- sum(sig$log2FoldChange >= 0 & sig$log2FoldChange <= lfc_threshold)
-  n_up_high   <- sum(sig$log2FoldChange > lfc_threshold)
-  n_ns        <- sum(df$category == "NS")
+  n_down_low <- sum(
+    sig$log2FoldChange >= -lfc_threshold & sig$log2FoldChange < 0
+  )
+  n_up_low <- sum(sig$log2FoldChange >= 0 & sig$log2FoldChange <= lfc_threshold)
+  n_up_high <- sum(sig$log2FoldChange > lfc_threshold)
+  n_ns <- sum(df$category == "NS")
 
   # ── Determine axis limits for annotation placement ────────────────────────
   # Use user-supplied limits if given, otherwise compute from data
@@ -179,9 +186,9 @@ vizVolcano <- function(
 
   # Zone midpoints (x) for annotation labels
   x_mid_down_high <- (x_lo + (-lfc_threshold)) / 2
-  x_mid_down_low  <- ((-lfc_threshold) + 0) / 2
-  x_mid_up_low    <- (0 + lfc_threshold) / 2
-  x_mid_up_high   <- (lfc_threshold + x_hi) / 2
+  x_mid_down_low <- ((-lfc_threshold) + 0) / 2
+  x_mid_up_low <- (0 + lfc_threshold) / 2
+  x_mid_up_high <- (lfc_threshold + x_hi) / 2
 
   # Y position for count labels
   y_label <- y_lo + (y_hi - y_lo) * count_y_position
@@ -195,6 +202,15 @@ vizVolcano <- function(
     stringsAsFactors = FALSE
   )
 
+  # ── Zone shading rectangles ───────────────────────────────────────────────
+  # Significance threshold on y-axis
+  sig_y <- -log10(padj_cutoff)
+
+  # Lighter fills for each zone (using adjustcolor for transparency)
+  fill_up  <- adjustcolor(col_up, alpha.f = shade_alpha)
+  fill_low <- adjustcolor(col_low, alpha.f = shade_alpha)
+  fill_ns  <- adjustcolor(col_ns, alpha.f = shade_alpha)
+
   # ── Build the plot ────────────────────────────────────────────────────────
   p <- ggplot2::ggplot(
     df,
@@ -204,13 +220,51 @@ vizVolcano <- function(
       color = .data$category
     )
   ) +
+    # Zone shading: significant zones above the padj line
+    # Down high: x from -Inf to -threshold, y from sig_y to Inf
+    ggplot2::annotate(
+      "rect",
+      xmin = -Inf, xmax = -lfc_threshold,
+      ymin = sig_y, ymax = Inf,
+      fill = fill_up, color = NA
+    ) +
+    # Down low: x from -threshold to 0
+    ggplot2::annotate(
+      "rect",
+      xmin = -lfc_threshold, xmax = 0,
+      ymin = sig_y, ymax = Inf,
+      fill = fill_low, color = NA
+    ) +
+    # Up low: x from 0 to threshold
+    ggplot2::annotate(
+      "rect",
+      xmin = 0, xmax = lfc_threshold,
+      ymin = sig_y, ymax = Inf,
+      fill = fill_low, color = NA
+    ) +
+    # Up high: x from threshold to Inf
+    ggplot2::annotate(
+      "rect",
+      xmin = lfc_threshold, xmax = Inf,
+      ymin = sig_y, ymax = Inf,
+      fill = fill_up, color = NA
+    ) +
+    # Non-significant zone below the padj line
+    ggplot2::annotate(
+      "rect",
+      xmin = -Inf, xmax = Inf,
+      ymin = -Inf, ymax = sig_y,
+      fill = fill_ns, color = NA
+    ) +
     ggplot2::geom_point(
       size = point_size,
       alpha = point_alpha
     ) +
     ggplot2::scale_color_manual(values = color_map, guide = "none") +
     # Expand y-axis so count labels at top are fully visible
-    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0.02, 0.10))) +
+    ggplot2::scale_y_continuous(
+      expand = ggplot2::expansion(mult = c(0.02, 0.10))
+    ) +
     # Vertical LFC threshold lines
     ggplot2::geom_vline(
       xintercept = c(-lfc_threshold, lfc_threshold),
@@ -252,8 +306,14 @@ vizVolcano <- function(
       # Title
       plot.title = ggplot2::element_text(hjust = 0.5),
       # Axes
-      axis.line = ggplot2::element_line(color = "black", linewidth = border_width),
-      axis.ticks = ggplot2::element_line(color = "black", linewidth = border_width),
+      axis.line = ggplot2::element_line(
+        color = "black",
+        linewidth = border_width
+      ),
+      axis.ticks = ggplot2::element_line(
+        color = "black",
+        linewidth = border_width
+      ),
       axis.ticks.length = ggplot2::unit(4, "pt"),
       # No grid at all
       panel.grid.major = ggplot2::element_blank(),
@@ -274,28 +334,36 @@ vizVolcano <- function(
         "Falling back to geom_text()."
       )
       label_df <- df[df[[gene_col]] %in% label_genes, ]
-      p <- p + ggplot2::geom_text(
-        data = label_df,
-        ggplot2::aes(label = .data[[gene_col]]),
-        size = 3,
-        vjust = -0.8,
-        show.legend = FALSE
-      )
+      p <- p +
+        ggplot2::geom_text(
+          data = label_df,
+          ggplot2::aes(label = .data[[gene_col]]),
+          color = label_color,
+          size = 3,
+          vjust = -0.8,
+          show.legend = FALSE
+        )
     } else {
       label_df <- df[df[[gene_col]] %in% label_genes, ]
-      p <- p + ggrepel::geom_text_repel(
-        data = label_df,
-        ggplot2::aes(label = .data[[gene_col]]),
-        size = 3,
-        max.overlaps = 20,
-        show.legend = FALSE
-      )
+      p <- p +
+        ggrepel::geom_text_repel(
+          data = label_df,
+          ggplot2::aes(label = .data[[gene_col]]),
+          color = label_color,
+          size = 3,
+          max.overlaps = 20,
+          show.legend = FALSE
+        )
     }
   }
 
   # ── Print summary to console ──────────────────────────────────────────────
   message(
-    sprintf("vizVolcano summary (padj < %g, |LFC| threshold = %g):", padj_cutoff, lfc_threshold),
+    sprintf(
+      "vizVolcano summary (padj < %g, |LFC| threshold = %g):",
+      padj_cutoff,
+      lfc_threshold
+    ),
     sprintf("\n  Down & |LFC| > %g : %d genes", lfc_threshold, n_down_high),
     sprintf("\n  Down & |LFC| <= %g: %d genes", lfc_threshold, n_down_low),
     sprintf("\n  Up   & |LFC| <= %g: %d genes", lfc_threshold, n_up_low),
