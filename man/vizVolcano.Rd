@@ -15,7 +15,9 @@ vizVolcano(
   point_alpha = 0.7,
   title = "Volcano Plot",
   xlab = "log2(Fold Change)",
-  ylab = "-log10(adjusted p-value)",
+  ylab = expression(-log[10] ~ italic(FDR)),
+  xlim = NULL,
+  ylim = NULL,
   label_genes = NULL,
   gene_col = "symbol"
 )
@@ -49,11 +51,19 @@ Default is \code{0.7}.}
 
 \item{title}{Character. Plot title. Default is \code{"Volcano Plot"}.}
 
-\item{xlab}{Character. X-axis label. Default is
+\item{xlab}{Character or expression. X-axis label. Default is
 \code{"log2(Fold Change)"}.}
 
-\item{ylab}{Character. Y-axis label. Default is
-\code{"-log10(adjusted p-value)"}.}
+\item{ylab}{Expression or character. Y-axis label. Default uses
+\code{expression(-log[10]~italic(FDR))}.}
+
+\item{xlim}{Numeric vector of length 2 giving the x-axis limits
+(e.g. \code{c(-5, 5)}), or \code{NULL} for automatic limits.
+Default is \code{NULL}.}
+
+\item{ylim}{Numeric vector of length 2 giving the y-axis limits
+(e.g. \code{c(0, 50)}), or \code{NULL} for automatic limits.
+Default is \code{NULL}.}
 
 \item{label_genes}{Character vector of gene symbols to label on the plot,
 or \code{NULL} (no labels). Default is \code{NULL}.}
@@ -79,13 +89,15 @@ magnitude:
 }
 }
 \details{
-The number of genes in each category is displayed in the plot legend.
+Gene counts for four significant zones are annotated directly on the
+plot near the top of each zone.
 }
 \examples{
 \dontrun{
 res <- read.csv("EUC021_LFC_AL.csv")
 vizVolcano(res, lfc_threshold = 1)
 vizVolcano(res, lfc_threshold = 0.5, padj_cutoff = 0.01)
+vizVolcano(res, lfc_threshold = 1, xlim = c(-6, 6), ylim = c(0, 40))
 }
 
 }
