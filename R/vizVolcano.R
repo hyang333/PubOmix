@@ -172,8 +172,8 @@ vizVolcano <- function(
   x_mid_up_low    <- (0 + lfc_threshold) / 2
   x_mid_up_high   <- (lfc_threshold + x_hi) / 2
 
-  # Y position for count labels: near top with margin
-  y_label <- y_lo + (y_hi - y_lo) * 0.90
+  # Y position for count labels: 3/4 of the y-axis height
+  y_label <- y_lo + (y_hi - y_lo) * 0.75
 
   # Build annotation data.frame
   count_labels <- data.frame(
