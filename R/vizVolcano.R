@@ -32,6 +32,8 @@
 #' @param point_size Numeric. Size of the points. Default is \code{1.2}.
 #' @param point_alpha Numeric. Transparency of the points (0--1).
 #'   Default is \code{0.7}.
+#' @param border_width Numeric. Line width for axis lines and ticks.
+#'   Default is \code{0.4}.
 #' @param title Character. Plot title. Default is \code{"Volcano Plot"}.
 #' @param xlab Character or expression. X-axis label. Default is
 #'   \code{"log2(Fold Change)"}.
@@ -71,6 +73,7 @@ vizVolcano <- function(
   col_ns = "grey70",
   point_size = 1.2,
   point_alpha = 0.7,
+  border_width = 0.4,
   title = "Volcano Plot",
   xlab = "log2(Fold Change)",
   ylab = expression(-log[10]~italic(FDR)),
@@ -159,8 +162,8 @@ vizVolcano <- function(
   x_mid_up_low    <- (0 + lfc_threshold) / 2
   x_mid_up_high   <- (lfc_threshold + x_hi) / 2
 
-  # Y position for count labels: near top of plot
-  y_label <- y_hi * 0.95
+  # Y position for count labels: 3/4 of the plot height
+  y_label <- y_hi * 0.75
 
   # Build annotation data.frame
   count_labels <- data.frame(
@@ -184,14 +187,7 @@ vizVolcano <- function(
       size = point_size,
       alpha = point_alpha
     ) +
-    ggplot2::scale_color_manual(
-      values = color_map,
-      labels = c(
-        "Sig_High" = paste0("|LFC| > ", lfc_threshold),
-        "Sig_Low"  = paste0("|LFC| \u2264 ", lfc_threshold),
-        "NS"       = "NS"
-      )
-    ) +
+    ggplot2::scale_color_manual(values = color_map, guide = "none") +
     # Vertical LFC threshold lines
     ggplot2::geom_vline(
       xintercept = c(-lfc_threshold, lfc_threshold),
@@ -220,30 +216,27 @@ vizVolcano <- function(
       y = count_labels$y,
       label = count_labels$label,
       color = count_labels$col,
-      fontface = "bold",
       size = 4.5
     ) +
     ggplot2::labs(
       title = title,
       x = xlab,
-      y = ylab,
-      color = paste0("padj < ", padj_cutoff)
+      y = ylab
     ) +
     # ── cowplot-style theme ────────────────────────────────────────────────
     ggplot2::theme_classic(base_size = 13) +
     ggplot2::theme(
       # Title
-      plot.title = ggplot2::element_text(face = "bold", hjust = 0.5),
-      # Axes: thick lines, outward ticks
-      axis.line = ggplot2::element_line(color = "black", linewidth = 0.6),
-      axis.ticks = ggplot2::element_line(color = "black", linewidth = 0.6),
+      plot.title = ggplot2::element_text(hjust = 0.5),
+      # Axes
+      axis.line = ggplot2::element_line(color = "black", linewidth = border_width),
+      axis.ticks = ggplot2::element_line(color = "black", linewidth = border_width),
       axis.ticks.length = ggplot2::unit(4, "pt"),
       # No grid at all
       panel.grid.major = ggplot2::element_blank(),
       panel.grid.minor = ggplot2::element_blank(),
-      # Legend
-      legend.position = "top",
-      legend.title = ggplot2::element_text(face = "bold")
+      # No legend
+      legend.position = "none"
     )
 
   # ── Apply axis limits if provided ─────────────────────────────────────────

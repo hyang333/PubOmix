@@ -13,6 +13,7 @@ vizVolcano(
   col_ns = "grey70",
   point_size = 1.2,
   point_alpha = 0.7,
+  border_width = 0.4,
   title = "Volcano Plot",
   xlab = "log2(Fold Change)",
   ylab = expression(-log[10] ~ italic(FDR)),
@@ -48,6 +49,9 @@ Default is \code{"grey70"}.}
 
 \item{point_alpha}{Numeric. Transparency of the points (0--1).
 Default is \code{0.7}.}
+
+\item{border_width}{Numeric. Line width for axis lines and ticks.
+Default is \code{0.4}.}
 
 \item{title}{Character. Plot title. Default is \code{"Volcano Plot"}.}
 
